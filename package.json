@@ -1,0 +1,21 @@
+{
+  "name": "bch-finanzas-agent-pwa",
+  "version": "1.0.0",
+  "description": "PWA & Agente de Finanzas Personales IA para Banco de Chile con Integración Gmail en Tiempo Real",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "sync-gmail": "node -e \"require('./src/services/gmailService').syncFromGmail().then(r => console.log(r))\""
+  },
+  "keywords": [
+    "banco-de-chile",
+    "gmail-api",
+    "finanzas-personales",
+    "ai-agent",
+    "pwa",
+    "sqlite"
+  ],
+  "author": "Carlos Sepúlveda",
+  "license": "MIT"
+}

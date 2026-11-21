@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="PWA y Agente de Finanzas Personales IA en tiempo real para Banco de Chile vía Gmail con Dashboard 360° e Integración Multi-Agente para Fintual Acciones." />
+  <meta name="theme-color" content="#0A1861" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png" />
+  <link rel="apple-touch-icon" href="./icon-192.png" />
+  <link rel="stylesheet" href="./styles.css" />
+  <title>Banco de Chile &amp; Fintual Acciones · Agente Financiero IA en Tiempo Real</title>
+</head>
+<body>
+  <!-- ================= HEADER / TOPBAR ================= -->
+  <header class="topbar">
+    <div class="topbar-inner">
+      <div class="brand-group">
+        <div class="brand-mark">BCH</div>
+        <div class="brand-title">
+          <h1>Agente Financiero Banco de Chile &amp; Fintual Hub</h1>
+          <div class="brand-subtitle">
+            <span class="live-dot"></span>
+            <span id="gmail-account-status">Gmail Protegido (Token 24/7)</span>
+            <span>·</span>
+            <span id="realtime-status-badge" class="mono">Escucha diaria activa (24/7)</span>
+            <span>·</span>
+            <span id="real-email-counter" class="mono">126 movs</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button id="btn-install-pwa" class="btn btn-primary" onclick="triggerAndroidInstall()">
+          📲 Instalar en Android
+        </button>
+        <button id="btn-cloud-config" class="btn btn-emerald" onclick="openCloudConfigModal()">
+          🔒 Gmail 24/7 &amp; PIN
+        </button>
+        <button id="btn-sync-gmail" class="btn" onclick="triggerGmailSync()">
+          ↻ Sincronizar
+        </button>
+        <button id="btn-open-sim" class="btn" onclick="openSimulateModal()">
+          + Simular
+        </button>
+        <button id="btn-theme-toggle" class="btn" onclick="toggleTheme()" aria-label="Cambiar tema">
+          ☀ / ☾
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= MAIN CONTENT ================= -->
+  <main class="container">
+    <!-- 4 PESTAÑAS / VIÑETAS PRINCIPALES -->
+    <nav class="main-tabs-bar" aria-label="Navegación principal del ecosistema financiero">
+      <button id="tab-btn-dashboard" class="main-tab-btn active" onclick="switchInstrumentTab('DASHBOARD')">
+        <div class="tab-label-group">
+          <span class="tab-eyebrow">Viñeta 1 · Visión Consolidada 360°</span>
+          <span class="tab-title">📊 Dashboard General</span>
+        </div>
+        <span id="tab-count-dashboard" class="tab-pill-count mono">126 total</span>
+      </button>
+
+      <button id="tab-btn-debito" class="main-tab-btn" onclick="switchInstrumentTab('DEBITO_CUENTA')">
+        <div class="tab-label-group">
+          <span class="tab-eyebrow">Viñeta 2 · Cuenta / Débito ****0401</span>
+          <span class="tab-title">💳 Débito / Cuenta</span>
+        </div>
+        <span id="tab-count-debito" class="tab-pill-count mono">101 movs</span>
+      </button>
+
+      <button id="tab-btn-credito" class="main-tab-btn" onclick="switchInstrumentTab('CREDITO')">
+        <div class="tab-label-group">
+          <span class="tab-eyebrow">Viñeta 3 · Tarjeta Crédito ****4114</span>
+          <span class="tab-title">💳 Tarjeta de Crédito</span>
+        </div>
+        <span id="tab-count-credito" class="tab-pill-count mono">25 cargos</span>
+      </button>
+
+      <button id="tab-btn-fintual" class="main-tab-btn" onclick="switchInstrumentTab('FINTUAL')">
+        <div class="tab-label-group">
+          <span class="tab-eyebrow">Viñeta 4 · Puente Multi-Agente</span>
+          <span class="tab-title">📈 Fintual Acciones</span>
+        </div>
+        <span id="tab-count-fintual" class="tab-pill-count mono">4 activos</span>
+      </button>
+    </nav>
+
+    <!-- TARJETAS DE RESUMEN SUPERIOR (DINÁMICAS SEGÚN VIÑETA ACTIVA) -->
+    <section id="kpi-summary-grid" class="kpi-grid" aria-label="Resumen financiero de la pestaña"></section>
+
+    <!-- BLOQUE 1 EXCLUSIVO DASHBOARD GENERAL: COMPARATIVA INTERACTIVA MES A MES (SEP / OCT / NOV) -->
+    <section id="global-monthly-comparison-section" class="panel-card" style="display:none;" aria-label="Comparativa interactiva mensual"></section>
+
+    <!-- BLOQUE 2 EXCLUSIVO TARJETA DE CRÉDITO: FACTURACIÓN POR MES Y RESERVA DE PAGO -->
+    <section id="credit-billing-reservation-section" class="panel-card" style="display:none;" aria-label="Facturación mensual y reserva de pago Tarjeta de Crédito"></section>
+
+    <!-- BLOQUE 3 EXCLUSIVO FINTUAL ACCIONES: PUENTE DE LIQUIDEZ + PORTAFOLIO + SEÑALES AGENTE INVERSIONES -->
+    <section id="fintual-hub-section" style="display:none; flex-direction:column; gap:16px;" aria-label="Módulo Fintual Acciones y Agente de Inversiones"></section>
+
+    <!-- ALERTA DINÁMICA DEL AGENTE DE INTELIGENCIA FINANCIERA -->
+    <section id="agent-alert-section" class="agent-alert-banner warning" aria-label="Auditoría del Agente Financiero"></section>
+
+    <!-- MÓDULO DE ANÁLISIS INTELIGENTE: SEMÁFORO FINANCIERO + DETECTOR DE RECURRENCIA -->
+    <section id="analytics-grid-section" class="analytics-grid">
+      <article class="panel-card">
+        <div class="panel-header">
+          <div>
+            <h2 id="semaphore-panel-title" class="panel-title">Auditoría de Necesidad (Semáforo Financiero)</h2>
+            <p class="panel-subtitle">Distribución real de gastos Necesarios vs. Opcionales y Gasto Hormiga</p>
+          </div>
+          <span id="semaphore-total-badge" class="badge badge-demo mono">$0 CLP</span>
+        </div>
+
+        <div class="semaphore-progress-track" aria-label="Barra de proporción del semáforo">
+          <div id="sem-bar-green" class="sem-bar-green" style="width: 34%"></div>
+          <div id="sem-bar-amber" class="sem-bar-amber" style="width: 33%"></div>
+          <div id="sem-bar-red" class="sem-bar-red" style="width: 33%"></div>
+        </div>
+
+        <div id="semaphore-cards-container" class="semaphore-cards"></div>
+
+        <div style="border-top: 1px solid var(--border-subtle); padding-top: 10px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+            <span style="font-size:12px; font-weight:600; color:var(--text-secondary);">
+              Reglas Personalizadas de Corrección del Agente
+            </span>
+            <span style="font-size:11px; color:var(--text-muted);">Haz clic en "⚙ Corregir IA" en cualquier gasto</span>
+          </div>
+          <div id="rules-list-container" class="rules-list"></div>
+        </div>
+      </article>
+
+      <article class="panel-card">
+        <div class="panel-header">
+          <div>
+            <h2 id="ranking-panel-title" class="panel-title">Recurrencia y Top de Gastos</h2>
+            <p class="panel-subtitle">Comercios donde gastas con mayor repetición e impacto acumulado</p>
+          </div>
+          <div class="ranking-tabs">
+            <button id="rank-tab-recurring" class="pill-btn active" onclick="setRankingMode('RECURRING')">🔁 Recurrentes</button>
+            <button id="rank-tab-categories" class="pill-btn" onclick="setRankingMode('CATEGORIES')">Categorías</button>
+            <button id="rank-tab-merchants" class="pill-btn" onclick="setRankingMode('MERCHANTS')">Top Monto</button>
+          </div>
+        </div>
+
+        <div id="ranking-list-container" class="rank-list"></div>
+      </article>
+    </section>
+
+    <!-- LISTADO DE MOVIMIENTOS EN TIEMPO REAL -->
+    <section id="movements-card-section" class="panel-card" aria-label="Listado de movimientos en tiempo real">
+      <div class="panel-header">
+        <div>
+          <h2 id="movements-list-title" class="panel-title">Listado de Movimientos en Tiempo Real</h2>
+          <p id="movements-list-subtitle" class="panel-subtitle">
+            Sincronización diaria automática desde tu-correo@gmail.com vía Gmail API &amp; Server-Sent Events
+          </p>
+        </div>
+        <span id="movements-shown-count" class="badge badge-gmail mono">0 movimientos</span>
+      </div>
+
+      <div class="tx-filter-bar">
+        <div class="filter-pills">
+          <button id="filter-all" class="pill-btn active" onclick="setNecessityFilter('ALL')">Todos</button>
+          <button id="filter-necesario" class="pill-btn" onclick="setNecessityFilter('Necesario')">● Necesarios</button>
+          <button id="filter-opcional" class="pill-btn" onclick="setNecessityFilter('Opcional / Prescindible')">● Opcionales</button>
+          <button id="filter-hormiga" class="pill-btn" onclick="setNecessityFilter('Gasto Hormiga')">● Gasto Hormiga</button>
+          <button id="filter-ingreso" class="pill-btn" onclick="setNecessityFilter('Ingreso')">＋ Ingresos</button>
+        </div>
+
+        <input
+          id="search-tx-input"
+          type="search"
+          class="search-input"
+          placeholder="Buscar SERVICIOS Y COMER, Tottus, Smart Fit, Líder..."
+          oninput="handleSearchInput(this.value)"
+        />
+      </div>
+
+      <div id="transactions-list-container" class="tx-list"></div>
+    </section>
+  </main>
+
+  <!-- ================= BARRA INFERIOR MOBILE-FIRST (4 VIÑETAS) ================= -->
+  <nav class="mobile-bottom-nav" aria-label="Navegación móvil rápida">
+    <button id="mob-tab-dashboard" class="btn btn-primary" onclick="switchInstrumentTab('DASHBOARD')" style="justify-content:center; padding:8px 6px; font-size:11.5px;">
+      📊 360°
+    </button>
+    <button id="mob-tab-debito" class="btn" onclick="switchInstrumentTab('DEBITO_CUENTA')" style="justify-content:center; padding:8px 6px; font-size:11.5px;">
+      💳 Débito
+    </button>
+    <button id="mob-tab-credito" class="btn" onclick="switchInstrumentTab('CREDITO')" style="justify-content:center; padding:8px 6px; font-size:11.5px;">
+      💳 Crédito
+    </button>
+    <button id="mob-tab-fintual" class="btn" onclick="switchInstrumentTab('FINTUAL')" style="justify-content:center; padding:8px 6px; font-size:11.5px;">
+      📈 Fintual
+    </button>
+  </nav>
+
+  <!-- ================= MODAL 1: CORREGIR CLASIFICACIÓN DEL AGENTE IA ================= -->
+  <div id="modal-override" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-override-title">
+    <div class="modal-box">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3 id="modal-override-title" style="font-size:15px; font-weight:700;">Corregir Evaluación del Agente IA</h3>
+        <button class="btn" onclick="closeOverrideModal()">✕</button>
+      </div>
+
+      <p id="override-tx-summary" style="font-size:12.5px; color:var(--text-secondary);"></p>
+      <input type="hidden" id="override-tx-id" />
+
+      <div class="form-group">
+        <label for="override-necessity-select">Nueva Clasificación de Necesidad</label>
+        <select id="override-necessity-select" class="form-control">
+          <option value="Necesario">Necesario (Verde · Gasto Esencial)</option>
+          <option value="Opcional / Prescindible">Opcional / Prescindible (Ámbar · Discrecional)</option>
+          <option value="Gasto Hormiga">Gasto Hormiga (Rojo · Micro-gasto repetitivo)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="override-category-select">Categoría</label>
+        <select id="override-category-select" class="form-control">
+          <option value="Supermercado">Supermercado</option>
+          <option value="Alimentación / Cafetería">Alimentación / Cafetería</option>
+          <option value="Minimarket y Almacén">Minimarket y Almacén</option>
+          <option value="Transporte y Metro">Transporte y Metro</option>
+          <option value="Salud y Farmacia">Salud y Farmacia</option>
+          <option value="Salud y Gimnasio">Salud y Gimnasio</option>
+          <option value="Pago Tarjeta de Crédito">Pago Tarjeta de Crédito</option>
+          <option value="Restaurantes y Fast Food">Restaurantes y Fast Food</option>
+          <option value="Suscripciones y Apps">Suscripciones y Apps</option>
+          <option value="Ocio y Entretenimiento">Ocio y Entretenimiento</option>
+          <option value="Compras y Retail">Compras y Retail</option>
+          <option value="Transferencias">Transferencias</option>
+          <option value="Cajero Automático">Cajero Automático</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="override-custom-note">Justificación personalizada (1 línea)</label>
+        <input id="override-custom-note" type="text" class="form-control" />
+      </div>
+
+      <div class="form-group" style="flex-direction:row; align-items:center; gap:8px;">
+        <input id="override-apply-rule" type="checkbox" checked />
+        <label for="override-apply-rule" style="cursor:pointer;">
+          Enseñar al Agente: aplicar siempre esta regla a todos los cargos de este comercio
+        </label>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button class="btn" onclick="closeOverrideModal()">Cancelar</button>
+        <button id="btn-save-override" class="btn btn-primary" onclick="submitOverrideForm()">Guardar Regla y Re-evaluar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL 2: SIMULAR CORREO ENTRANTE BANCO DE CHILE ================= -->
+  <div id="modal-simulate" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-sim-title">
+    <div class="modal-box">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3 id="modal-sim-title" style="font-size:15px; font-weight:700;">Simular Nueva Transacción en Tiempo Real</h3>
+        <button class="btn" onclick="closeSimulateModal()">✕</button>
+      </div>
+
+      <div class="form-group">
+        <label for="sim-instrument">Instrumento Bancario</label>
+        <select id="sim-instrument" class="form-control">
+          <option value="DEBITO_CUENTA">Cargo en Cuenta ****0401 (Débito / Cuenta Corriente)</option>
+          <option value="CREDITO">Compra con Tarjeta de Crédito ****4114</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="sim-flow-type">Tipo de Flujo</label>
+        <select id="sim-flow-type" class="form-control">
+          <option value="EGRESO">Egreso / Gasto (Disminuye saldo)</option>
+          <option value="INGRESO">Ingreso / Abono (Aumenta saldo)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="sim-merchant">Comercio o Destinatario</label>
+        <input id="sim-merchant" type="text" class="form-control" value="SERVICIOS Y COMER" />
+      </div>
+
+      <div class="form-group">
+        <label for="sim-amount">Monto (CLP)</label>
+        <input id="sim-amount" type="number" class="form-control" value="3490" min="500" step="100" />
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:8px; padding-top:6px;">
+        <button class="btn" onclick="closeSimulateModal()">Cancelar</button>
+        <button id="btn-submit-sim" class="btn btn-primary" onclick="submitCustomSimulation()">Enviar Correo al Agente</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL 3: AGREGAR / EDITAR POSICIÓN FINTUAL ACCIONES ================= -->
+  <div id="modal-fintual-pos" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal-box">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3 style="font-size:15px; font-weight:700;">Agregar / Actualizar Posición en Fintual Acciones</h3>
+        <button class="btn" onclick="closeFintualPosModal()">✕</button>
+      </div>
+
+      <div style="display:grid; grid-template-columns: 1fr 1.6fr; gap:10px;">
+        <div class="form-group">
+          <label for="fp-ticker">Ticker (NYSE/NASDAQ)</label>
+          <input id="fp-ticker" type="text" class="form-control mono" placeholder="AAPL" value="AAPL" />
+        </div>
+        <div class="form-group">
+          <label for="fp-name">Nombre del Activo / ETF</label>
+          <input id="fp-name" type="text" class="form-control" placeholder="Apple Inc." value="Apple Inc." />
+        </div>
+      </div>
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px;">
+        <div class="form-group">
+          <label for="fp-shares">Acciones (Fracción)</label>
+          <input id="fp-shares" type="number" step="0.01" class="form-control mono" value="0.50" />
+        </div>
+        <div class="form-group">
+          <label for="fp-avg">Precio Compra USD</label>
+          <input id="fp-avg" type="number" step="0.1" class="form-control mono" value="218.50" />
+        </div>
+        <div class="form-group">
+          <label for="fp-cur">Precio Actual USD</label>
+          <input id="fp-cur" type="number" step="0.1" class="form-control mono" value="232.80" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="fp-notes">Tesis / Nota para el Agente de Inversiones</label>
+        <input id="fp-notes" type="text" class="form-control" value="Posición Core Tech en Fintual Acciones" />
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button class="btn" onclick="closeFintualPosModal()">Cancelar</button>
+        <button class="btn btn-primary" onclick="submitFintualPosition()">Guardar en Portafolio Fintual</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL 4: CONECTAR MOTOR GMAIL 24/7 BLINDADO & PIN ================= -->
+  <div id="modal-cloud-config" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal-box">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3 style="font-size:15px; font-weight:700;">🔒 Seguridad: Conector Gmail 24/7 &amp; PIN de Bloqueo</h3>
+        <button class="btn" onclick="closeCloudConfigModal()">✕</button>
+      </div>
+
+      <div class="form-group">
+        <label for="cloud-worker-url">1. URL del Conector 24/7 (Google Apps Script Web App)</label>
+        <input
+          id="cloud-worker-url"
+          type="url"
+          class="form-control mono"
+          placeholder="https://script.google.com/macros/s/.../exec"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="cloud-worker-token">2. Clave Secreta del Conector (<code>API_SECRET_TOKEN</code> en Code.gs)</label>
+        <input
+          id="cloud-worker-token"
+          type="password"
+          class="form-control mono"
+          placeholder="BCH-2026-CLAVE-SECRETA"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="app-lock-pin">3. PIN de Bloqueo al abrir la App en tu Android (Opcional, 4-6 dígitos)</label>
+        <input
+          id="app-lock-pin"
+          type="password"
+          class="form-control mono"
+          placeholder="Dejar vacío para sin PIN, o escribe ej. 4821"
+        />
+      </div>
+
+      <div style="background:var(--bg-elevated); padding:10px 12px; border-radius:8px; border:1px solid var(--border-subtle); font-size:11.5px; color:var(--text-secondary); line-height:1.5;">
+        <strong>Blindaje Activo (Zero-PII &amp; Token Auth):</strong><br/>
+        • La app jamás pide claves del Banco de Chile ni permite mover dinero.<br/>
+        • El conector <code>Code.gs</code> exige tu <code>API_SECRET_TOKEN</code> y rechaza accesos no autorizados.<br/>
+        • Ningún nombre personal, RUT ni correo queda expuesto en GitHub.
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button class="btn" onclick="closeCloudConfigModal()">Cerrar</button>
+        <button class="btn btn-primary" onclick="saveCloudWorkerUrl()">Guardar Seguridad y Sincronizar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= PANTALLA DE BLOQUEO POR PIN EN ANDROID ================= -->
+  <div id="modal-pin-lock" class="modal-backdrop" role="dialog" aria-modal="true" style="background: rgba(11, 15, 23, 0.96); z-index: 200;">
+    <div class="modal-box" style="max-width:360px; text-align:center;">
+      <div class="brand-mark" style="margin:0 auto; width:48px; height:48px; font-size:16px;">🔒</div>
+      <h3 style="font-size:16px; font-weight:700;">BCH Finanzas IA · App Protegida</h3>
+      <p style="font-size:12.5px; color:var(--text-secondary);">Ingresa tu PIN de seguridad para desbloquear tu panel financiero:</p>
+      <input
+        id="unlock-pin-input"
+        type="password"
+        class="form-control mono"
+        style="text-align:center; font-size:18px; letter-spacing:0.25em;"
+        placeholder="••••"
+        onkeydown="if(event.key==='Enter') verifyAppPin()"
+      />
+      <p id="unlock-pin-error" style="font-size:12px; color:var(--crimson); display:none;">PIN incorrecto. Intenta nuevamente.</p>
+      <button class="btn btn-primary" style="justify-content:center; width:100%;" onclick="verifyAppPin()">Desbloquear Aplicación</button>
+    </div>
+  </div>
+
+  <!-- ================= MODAL 5: INSTALAR APP EN ANDROID ================= -->
+  <div id="modal-android-install" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal-box">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h3 style="font-size:15px; font-weight:700;">📲 Cómo instalar BCH Finanzas IA en tu Android</h3>
+        <button class="btn" onclick="closeAndroidInstallModal()">✕</button>
+      </div>
+
+      <div style="font-size:13px; color:var(--text-primary); line-height:1.6; display:flex; flex-direction:column; gap:8px;">
+        <p>1. Abre el enlace de tu aplicación en <strong>Google Chrome</strong> desde tu teléfono Android.</p>
+        <p>2. Toca el menú de <strong>tres puntos (⋮)</strong> arriba a la derecha en Chrome.</p>
+        <p>3. Selecciona <strong>"Instalar aplicación"</strong> (o <em>"Agregar a la pantalla principal"</em>).</p>
+        <p>4. ¡Listo! Verás el ícono azul <strong>BCH Finanzas</strong> en tu teléfono y se abrirá a pantalla completa como aplicación nativa.</p>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end;">
+        <button class="btn btn-primary" onclick="closeAndroidInstallModal()">Entendido</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container" class="toast-container"></div>
+
+  <script src="./app.js"></script>
+</body>
+</html>
