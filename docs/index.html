@@ -90,7 +90,28 @@
       </button>
     </nav>
 
-    <!-- TARJETAS DE RESUMEN SUPERIOR (DINÁMICAS SEGÚN VIÑETA ACTIVA) -->
+    <!-- SELECTOR GLOBAL DE HORIZONTE TEMPORAL (MES ACTUAL POR DEFECTO, CADA MES, SEMESTRE, AÑO) -->
+    <section class="period-selector-bar" aria-label="Selector de período financiero">
+      <div class="period-mode-group">
+        <span style="font-size:12px; font-weight:700; color:var(--text-secondary); margin-right:4px;">📅 Período:</span>
+        <button id="p-mode-CURRENT_MONTH" class="pill-btn active" onclick="setPeriodScope('CURRENT_MONTH')">
+          Mes Actual (Nov 2026)
+        </button>
+        <button id="p-mode-MONTH" class="pill-btn" onclick="setPeriodScope('MONTH')">
+          Por Mes
+        </button>
+        <button id="p-mode-SEMESTER" class="pill-btn" onclick="setPeriodScope('SEMESTER')">
+          Por Semestre
+        </button>
+        <button id="p-mode-YEAR" class="pill-btn" onclick="setPeriodScope('YEAR')">
+          Por Año
+        </button>
+      </div>
+
+      <div id="period-sub-options" class="period-sub-group"></div>
+    </section>
+
+    <!-- TARJETAS DE RESUMEN SUPERIOR (DINÁMICAS SEGÚN VIÑETA Y PERÍODO ACTIVO) -->
     <section id="kpi-summary-grid" class="kpi-grid" aria-label="Resumen financiero de la pestaña"></section>
 
     <!-- BLOQUE 1 EXCLUSIVO DASHBOARD GENERAL: COMPARATIVA INTERACTIVA MES A MES (SEP / OCT / NOV) -->

@@ -10,7 +10,10 @@ let appState = null;
 let activeTab = 'DASHBOARD';            // 'DASHBOARD' | 'DEBITO_CUENTA' | 'CREDITO' | 'FINTUAL'
 let activeRankingMode = 'RECURRING';    // 'RECURRING' | 'CATEGORIES' | 'MERCHANTS'
 let activeNecessityFilter = 'ALL';
-let activeMonthFilter = 'ALL';          // 'ALL' | '2026-11' | '2026-10' | '2026-09'
+let activePeriodScope = 'CURRENT_MONTH'; // 'CURRENT_MONTH' | 'MONTH' | 'SEMESTER' | 'YEAR'
+let selectedMonthKey = '2026-11';        // Por defecto: Mes Actual (Noviembre 2026)
+let selectedSemesterKey = '2026-S2';     // '2026-S2' (Jul-Dic) | '2026-S1' (Ene-Jun)
+let selectedYearKey = '2026';            // '2026' | 'ALL'
 let searchQuery = '';
 let deferredInstallPrompt = null;
 
@@ -266,13 +269,214 @@ function getTxMonthKey(tx) {
   return (tx.transaction_date || '2026-11').slice(0, 7);
 }
 
+const MONTH_NAMES_MAP = {
+  '2026-01': 'Enero 2026',
+  '2026-02': 'Febrero 2026',
+  '2026-03': 'Marzo 2026',
+  '2026-04': 'Abril 2026',
+  '2026-05': 'Mayo 2026',
+  '2026-06': 'Junio 2026',
+  '2026-07': 'Julio 2026',
+  '2026-08': 'Agosto 2026',
+  '2026-09': 'Septiembre 2026',
+  '2026-10': 'Octubre 2026',
+  '2026-11': 'Noviembre 2026',
+  '2026-12': 'Diciembre 2026'
+};
+
 /**
- * Construye el objeto completo appState en el cliente (idéntico al backend Node.js)
- * para que la PWA en Android funcione a velocidad instantánea en GitHub Pages y offline.
+ * Devuelve la configuración del período activo (Mes Actual por defecto, Por Mes, Por Semestre o Por Año)
+ */
+function getPeriodInfo() {
+  if (activePeriodScope === 'CURRENT_MONTH') {
+    return {
+      scope: 'CURRENT_MONTH',
+      key: '2026-11',
+      label: 'Noviembre 2026 (Mes Actual)',
+      shortLabel: 'Noviembre 2026',
+      monthsDivisor: 1,
+      matches: (tx) => getTxMonthKey(tx) === '2026-11'
+    };
+  }
+  if (activePeriodScope === 'MONTH') {
+    const mName = MONTH_NAMES_MAP[selectedMonthKey] || selectedMonthKey;
+    return {
+      scope: 'MONTH',
+      key: selectedMonthKey,
+      label: selectedMonthKey === '2026-11' ? 'Noviembre 2026 (Mes Actual)' : mName,
+      shortLabel: mName,
+      monthsDivisor: 1,
+      matches: (tx) => getTxMonthKey(tx) === selectedMonthKey
+    };
+  }
+  if (activePeriodScope === 'SEMESTER') {
+    if (selectedSemesterKey === '2026-S1') {
+      return {
+        scope: 'SEMESTER',
+        key: '2026-S1',
+        label: '1° Semestre 2026 (Ene – Jun)',
+        shortLabel: '1° Semestre 2026',
+        monthsDivisor: 1,
+        matches: (tx) => {
+          const mk = getTxMonthKey(tx);
+          return mk >= '2026-01' && mk <= '2026-06';
+        }
+      };
+    }
+    return {
+      scope: 'SEMESTER',
+      key: '2026-S2',
+      label: '2° Semestre 2026 (Jul – Dic)',
+      shortLabel: '2° Semestre 2026',
+      monthsDivisor: 2,
+      matches: (tx) => {
+        const mk = getTxMonthKey(tx);
+        return mk >= '2026-07' && mk <= '2026-12';
+      }
+    };
+  }
+  // activePeriodScope === 'YEAR'
+  if (selectedYearKey === 'ALL') {
+    return {
+      scope: 'YEAR',
+      key: 'ALL',
+      label: 'Histórico Completo Acumulado',
+      shortLabel: 'Histórico Total',
+      monthsDivisor: 2,
+      matches: () => true
+    };
+  }
+  return {
+    scope: 'YEAR',
+    key: selectedYearKey,
+    label: `Año ${selectedYearKey} (Ene – Dic)`,
+    shortLabel: `Año ${selectedYearKey}`,
+    monthsDivisor: 2,
+    matches: (tx) => getTxMonthKey(tx).startsWith(`${selectedYearKey}-`)
+  };
+}
+
+function setPeriodScope(scope) {
+  activePeriodScope = scope;
+  if (scope === 'CURRENT_MONTH') {
+    selectedMonthKey = '2026-11';
+  }
+  appState = buildClientSideState();
+  renderDashboard();
+}
+
+function setSubPeriod(val) {
+  if (activePeriodScope === 'MONTH' || activePeriodScope === 'CURRENT_MONTH') {
+    activePeriodScope = 'MONTH';
+    selectedMonthKey = val;
+  } else if (activePeriodScope === 'SEMESTER') {
+    selectedSemesterKey = val;
+  } else if (activePeriodScope === 'YEAR') {
+    selectedYearKey = val;
+  }
+  appState = buildClientSideState();
+  renderDashboard();
+}
+
+function renderPeriodSelectorBar() {
+  const scopes = ['CURRENT_MONTH', 'MONTH', 'SEMESTER', 'YEAR'];
+  scopes.forEach((sc) => {
+    const btn = document.getElementById(`p-mode-${sc}`);
+    if (btn) btn.classList.toggle('active', activePeriodScope === sc);
+  });
+
+  const subContainer = document.getElementById('period-sub-options');
+  if (!subContainer || !appState) return;
+
+  const pInfo = appState.periodInfo;
+
+  if (activePeriodScope === 'CURRENT_MONTH') {
+    subContainer.innerHTML = `
+      <span class="badge badge-necesario mono" style="padding:5px 10px;">
+        ✓ Por defecto: ${pInfo.label} (${appState.counts.total} movs del mes · ${appState.counts.allHistoryTotal} en historial)
+      </span>
+      <button class="pill-btn" onclick="setPeriodScope('SEMESTER')" title="Ver acumulado del semestre">
+        Ver 2° Semestre (${appState.counts.allHistoryTotal} movs) →
+      </button>
+    `;
+  } else if (activePeriodScope === 'MONTH') {
+    const quickMonths = [
+      { key: '2026-11', label: 'Nov 2026 (Actual)' },
+      { key: '2026-10', label: 'Oct 2026' },
+      { key: '2026-09', label: 'Sep 2026' }
+    ];
+    const quickBtns = quickMonths
+      .map((m) => {
+        const count = localTransactions.filter((t) => getTxMonthKey(t) === m.key).length;
+        return `<button class="pill-btn ${selectedMonthKey === m.key ? 'active' : ''}" onclick="setSubPeriod('${m.key}')">${m.label} (${count})</button>`;
+      })
+      .join('');
+
+    const allMonthsOptions = Object.entries(MONTH_NAMES_MAP)
+      .reverse()
+      .map(([k, name]) => {
+        const c = localTransactions.filter((t) => getTxMonthKey(t) === k).length;
+        return `<option value="${k}" ${selectedMonthKey === k ? 'selected' : ''}>${name} (${c} movs)</option>`;
+      })
+      .join('');
+
+    subContainer.innerHTML = `
+      ${quickBtns}
+      <select
+        aria-label="Seleccionar cualquier mes del año"
+        onchange="setSubPeriod(this.value)"
+        style="background:var(--bg-elevated); color:var(--text-primary); border:1px solid var(--border-subtle); border-radius:999px; padding:4px 10px; font-size:12px; font-weight:600; cursor:pointer;"
+      >
+        ${allMonthsOptions}
+      </select>
+    `;
+  } else if (activePeriodScope === 'SEMESTER') {
+    const s2Count = localTransactions.filter((t) => {
+      const mk = getTxMonthKey(t);
+      return mk >= '2026-07' && mk <= '2026-12';
+    }).length;
+    const s1Count = localTransactions.filter((t) => {
+      const mk = getTxMonthKey(t);
+      return mk >= '2026-01' && mk <= '2026-06';
+    }).length;
+
+    subContainer.innerHTML = `
+      <button class="pill-btn ${selectedSemesterKey === '2026-S2' ? 'active' : ''}" onclick="setSubPeriod('2026-S2')">
+        2° Semestre 2026 · Jul–Dic (${s2Count} movs)
+      </button>
+      <button class="pill-btn ${selectedSemesterKey === '2026-S1' ? 'active' : ''}" onclick="setSubPeriod('2026-S1')">
+        1° Semestre 2026 · Ene–Jun (${s1Count} movs)
+      </button>
+    `;
+  } else if (activePeriodScope === 'YEAR') {
+    const y2026Count = localTransactions.filter((t) => getTxMonthKey(t).startsWith('2026-')).length;
+    subContainer.innerHTML = `
+      <button class="pill-btn ${selectedYearKey === '2026' ? 'active' : ''}" onclick="setSubPeriod('2026')">
+        Año 2026 · Ene–Dic (${y2026Count} movs)
+      </button>
+      <button class="pill-btn ${selectedYearKey === 'ALL' ? 'active' : ''}" onclick="setSubPeriod('ALL')">
+        Histórico Completo (${localTransactions.length} movs)
+      </button>
+    `;
+  }
+}
+
+/**
+ * Construye el objeto completo appState filtrado dinámicamente por el Período Activo
+ * (Mes Actual por defecto = Noviembre 2026, o Por Mes, Por Semestre, Por Año).
  */
 function buildClientSideState() {
-  const txs = localTransactions;
+  const allTxs = localTransactions;
+  const periodInfo = getPeriodInfo();
+  const txs = allTxs.filter(periodInfo.matches);
   const usdRate = 970;
+  const divisor = Math.max(1, periodInfo.monthsDivisor || 1);
+
+  // Saldo real acumulado en Cuenta Corriente ****0401 (considerando el sueldo REM $899.346 abonado el 30/10)
+  const allDebTxs = allTxs.filter((t) => t.instrument === 'DEBITO_CUENTA');
+  const allDebIng = allDebTxs.filter((t) => t.flow_type === 'INGRESO').reduce((s, t) => s + t.amount, 0);
+  const allDebEgr = allDebTxs.filter((t) => t.flow_type === 'EGRESO').reduce((s, t) => s + t.amount, 0);
+  const saldoAcumuladoCuenta = allDebIng - allDebEgr;
 
   function buildAuditForList(subList, instLabel) {
     const ingresos = subList.filter((t) => t.flow_type === 'INGRESO');
@@ -326,21 +530,24 @@ function buildClientSideState() {
       .filter((m) => m.count >= 2)
       .sort((a, b) => b.count - a.count || b.amount - a.amount);
 
-    const ahorroBim = Math.round(mNoEs / 2);
-    const ahorroAnual = Math.round(ahorroBim / 2) * 12;
+    const ahorroPeriodo = Math.round(mNoEs / 2);
+    const ahorroMensual = Math.round(ahorroPeriodo / divisor);
+    const ahorroAnual = ahorroMensual * 12;
     const topRec = recurringMerchants[0];
 
     return {
       kpis: {
         saldoNetoMes: totalIng - totalEgr,
+        saldoAcumuladoCuenta,
         totalIngresos: totalIng,
         totalEgresos: totalEgr,
         totalTransferencias: totalTEF,
         totalComprasDebito: totalEgr - totalTEF,
         cantidadMovimientos: subList.length,
         cantidadCompras: egresos.length,
+        cantidadComprasComercio: egresos.filter((t) => !t.category.includes('Transferencia') && !t.category.includes('Pago Tarjeta')).length,
         recurrentesCount: recurringMerchants.length,
-        proyeccionFacturacion: Math.round(totalEgr / 2)
+        proyeccionFacturacion: Math.round(totalEgr / divisor)
       },
       semaphore: {
         necesario: { amount: mNec, percentage: pNec, count: nec.length },
@@ -349,8 +556,8 @@ function buildClientSideState() {
         noEsencialTotal: {
           amount: mNoEs,
           percentage: pNoEs,
-          potentialBimonthlySavings: ahorroBim,
-          potentialMonthlySavings: Math.round(ahorroBim / 2),
+          potentialBimonthlySavings: ahorroPeriodo,
+          potentialMonthlySavings: ahorroMensual,
           potentialAnnualSavings: ahorroAnual
         }
       },
@@ -359,9 +566,9 @@ function buildClientSideState() {
       recurringMerchants,
       agentAlert: {
         severity: pNoEs >= 50 ? 'warning' : 'healthy',
-        title: `Auditoría En Vivo: ${pNoEs}% en gastos no esenciales`,
-        message: `El ${pNoEs}% de ${instLabel} (${formatCLP(mNoEs)} CLP en ${opc.length + hor.length} cargos) se ha ido en gastos Opcionales (${pOpc}%) y Gasto Hormiga (${pHor}%).${topRec ? ` Destaca "${topRec.merchant}" con ${topRec.count} cargos por ${formatCLP(topRec.amount)} CLP.` : ''} Reducir estos gastos no esenciales a la mitad libera ${formatCLP(ahorroBim)} CLP por bimestre (${formatCLP(ahorroAnual)} CLP/año).`,
-        potentialMonthlySavings: ahorroBim,
+        title: `Auditoría (${periodInfo.shortLabel}): ${pNoEs}% en gastos no esenciales`,
+        message: `En ${periodInfo.label}, el ${pNoEs}% de ${instLabel} (${formatCLP(mNoEs)} CLP en ${opc.length + hor.length} cargos) se ha ido en gastos Opcionales (${pOpc}%) y Gasto Hormiga (${pHor}%).${topRec ? ` Destaca "${topRec.merchant}" con ${topRec.count} cargos por ${formatCLP(topRec.amount)} CLP.` : ''} Reducir estos gastos no esenciales a la mitad libera ${formatCLP(ahorroPeriodo)} CLP en el período (${formatCLP(ahorroAnual)} CLP/año).`,
+        potentialMonthlySavings: ahorroPeriodo,
         potentialAnnualSavings: ahorroAnual
       }
     };
@@ -375,17 +582,21 @@ function buildClientSideState() {
   const credAudit = buildAuditForList(credTxs, 'tu Tarjeta de Crédito ****4114');
   const globalBase = buildAuditForList(consumoRealTxs, 'tu consumo consolidado (Débito + Crédito)');
 
-  // Facturación mensual Tarjeta de Crédito
-  const novCred = credTxs.filter((t) => getTxMonthKey(t) === '2026-11');
-  const octCred = credTxs.filter((t) => getTxMonthKey(t) === '2026-10');
-  const sepCred = credTxs.filter((t) => getTxMonthKey(t) === '2026-09');
+  // Facturación mensual Tarjeta de Crédito (calculada sobre todo el historial para mostrar siempre el calendario de reserva)
+  const allCredTxs = allTxs.filter((t) => t.instrument === 'CREDITO');
+  const novCred = allCredTxs.filter((t) => getTxMonthKey(t) === '2026-11');
+  const octCred = allCredTxs.filter((t) => getTxMonthKey(t) === '2026-10');
+  const sepCred = allCredTxs.filter((t) => getTxMonthKey(t) === '2026-09');
   const novSum = novCred.reduce((s, t) => s + t.amount, 0);
   const octSum = octCred.reduce((s, t) => s + t.amount, 0);
   const sepSum = sepCred.reduce((s, t) => s + t.amount, 0);
+  const totalCredAcumulado = allCredTxs.reduce((s, t) => s + t.amount, 0);
   const remanenteOct = 37207;
   const reservarNov = novSum + remanenteOct;
 
   credAudit.monthlyBilling = {
+    totalHistoryAmount: totalCredAcumulado,
+    totalHistoryCount: allCredTxs.length,
     currentCycle: {
       monthKey: '2026-11',
       purchasesThisMonth: novSum,
@@ -436,7 +647,7 @@ function buildClientSideState() {
     { key: '2026-11', label: 'Noviembre 2026 (Actual)' }
   ];
   const monthlyComparison = monthDefs.map((m) => {
-    const mt = txs.filter((t) => getTxMonthKey(t) === m.key);
+    const mt = allTxs.filter((t) => getTxMonthKey(t) === m.key);
     const ingresos = mt.filter((t) => t.flow_type === 'INGRESO').reduce((s, t) => s + t.amount, 0);
     const consumoDebito = mt
       .filter((t) => t.flow_type === 'EGRESO' && t.instrument === 'DEBITO_CUENTA' && !t.category.includes('Pago Tarjeta'))
@@ -450,7 +661,7 @@ function buildClientSideState() {
     return { ...m, ingresos, consumoDebito, consumoCredito, consumoTotal: consumoDebito + consumoCredito, gastoHormiga, txCount: mt.length };
   });
 
-  const balanceCuenta = debAudit.kpis.saldoNetoMes;
+  const balanceCuenta = saldoAcumuladoCuenta;
   const liquidezLibrePostReservaTC = balanceCuenta - reservarNov;
   const colchonSeguridad = 150000;
   const capitalDisponibleFintual = Math.max(0, liquidezLibrePostReservaTC - colchonSeguridad);
@@ -469,13 +680,20 @@ function buildClientSideState() {
   const totalPnlUsd = Number((totalPortfolioUsd - totalCostUsd).toFixed(2));
 
   return {
-    connectedAccount: 'tu-correo@gmail.com',
+    connectedAccount: 'Gmail Protegido (Token 24/7)',
+    periodInfo,
     realtimeConfig: { lastSyncTimestamp: new Date().toISOString() },
-    counts: { total: txs.length, gmailRealCount: txs.length, simuladoCount: 0 },
+    counts: {
+      total: txs.length,
+      allHistoryTotal: allTxs.length,
+      gmailRealCount: txs.length,
+      simuladoCount: 0
+    },
     transactions: txs,
     globalDashboard: {
       kpis: {
         totalIngresos: debAudit.kpis.totalIngresos,
+        totalIngresosAcumulados: allDebIng,
         totalConsumoRealConsolidado: globalBase.kpis.totalEgresos,
         totalConsumoDebito: globalBase.kpis.totalEgresos - credAudit.kpis.totalEgresos,
         totalConsumoCredito: credAudit.kpis.totalEgresos,
@@ -567,14 +785,25 @@ async function fetchState() {
     }
   }
 
-  // 2. Intentar API local Node.js si está corriendo; si estamos en GitHub Pages Android, usar motor local
+  // 2. Si el backend Node.js local está corriendo, sincronizar sus transacciones con localTransactions
+  //    y luego construir siempre el estado con el filtro de Período Activo (Mes Actual / Mes / Semestre / Año)
   try {
     const res = await fetch('./api/state?source=ALL');
     if (res.ok) {
-      appState = await res.json();
-      updateRealtimeBadge(appState.realtimeConfig?.lastSyncTimestamp);
-      renderDashboard();
-      return;
+      const serverData = await res.json();
+      if (Array.isArray(serverData.transactions) && serverData.transactions.length > 0) {
+        localTransactions = serverData.transactions;
+      }
+      if (Array.isArray(serverData.rules)) {
+        localRules = serverData.rules;
+      }
+      if (serverData.fintual?.positions) {
+        localFintualPositions = serverData.fintual.positions;
+      }
+      if (serverData.fintual?.signals) {
+        localFintualSignals = serverData.fintual.signals;
+      }
+      saveLocalState();
     }
   } catch {}
 
@@ -596,7 +825,6 @@ function updateRealtimeBadge(isoTimestamp) {
 
 function initSSE() {
   if (!window.EventSource || window.location.hostname.includes('github.io')) {
-    // En GitHub Pages Android, verificar la nube cada 45 segundos automáticamente
     setInterval(() => {
       if (localStorage.getItem('bch_cloud_worker_url')) {
         fetchState();
@@ -640,7 +868,6 @@ function initSSE() {
 
 function switchInstrumentTab(tab) {
   activeTab = tab;
-  activeMonthFilter = 'ALL';
 
   const tabMap = {
     DASHBOARD: ['tab-btn-dashboard', 'mob-tab-dashboard'],
@@ -660,7 +887,17 @@ function switchInstrumentTab(tab) {
 }
 
 function setMonthFilter(monthKey) {
-  activeMonthFilter = activeMonthFilter === monthKey ? 'ALL' : monthKey;
+  if (monthKey === 'ALL') {
+    setPeriodScope('SEMESTER');
+    return;
+  }
+  if (monthKey === '2026-11' && activePeriodScope !== 'CURRENT_MONTH' && activePeriodScope !== 'MONTH') {
+    setPeriodScope('CURRENT_MONTH');
+    return;
+  }
+  activePeriodScope = 'MONTH';
+  selectedMonthKey = monthKey;
+  appState = buildClientSideState();
   renderDashboard();
 }
 
@@ -703,12 +940,14 @@ function toggleTheme() {
 function renderDashboard() {
   if (!appState) return;
 
+  renderPeriodSelectorBar();
+
   const debitoCount = appState.transactions.filter((t) => t.instrument === 'DEBITO_CUENTA').length;
   const creditoCount = appState.transactions.filter((t) => t.instrument === 'CREDITO').length;
   const fintualCount = appState.fintual?.positions?.length || 0;
 
-  document.getElementById('real-email-counter').textContent = `${appState.counts.total} movs`;
-  document.getElementById('tab-count-dashboard').textContent = `${appState.counts.total} total`;
+  document.getElementById('real-email-counter').textContent = `${appState.counts.total} movs (${appState.periodInfo.shortLabel})`;
+  document.getElementById('tab-count-dashboard').textContent = `${appState.counts.total} movs`;
   document.getElementById('tab-count-debito').textContent = `${debitoCount} movs`;
   document.getElementById('tab-count-credito').textContent = `${creditoCount} cargos`;
   document.getElementById('tab-count-fintual').textContent = `${fintualCount} activos`;
@@ -734,6 +973,7 @@ function renderDashboard() {
 }
 
 function getActiveAuditObject() {
+  const pInfo = appState.periodInfo;
   if (activeTab === 'DASHBOARD') {
     const g = appState.globalDashboard;
     const noEs = g.semaphore.noEsencialTotal;
@@ -748,8 +988,8 @@ function getActiveAuditObject() {
       recurringMerchants: g.recurringMerchants,
       agentAlert: {
         severity: noEs.percentage >= 50 ? 'warning' : 'healthy',
-        title: `Visión Consolidada 360° (Débito + Crédito): ${noEs.percentage}% en gastos no esenciales`,
-        message: `Sumando tu Cuenta/Débito ****0401 y tu Tarjeta de Crédito ****4114, has consumido ${formatCLP(g.kpis.totalConsumoRealConsolidado)} CLP reales en el bimestre, de los cuales ${formatCLP(noEs.amount)} CLP (${noEs.percentage}%) corresponden a gastos Opcionales y Gasto Hormiga.${topRec ? ` Tu comercio más repetido es "${topRec.merchant}" (${topRec.count} veces por ${formatCLP(topRec.amount)} CLP).` : ''} Si recortas a la mitad los gastos no esenciales, liberarías ${formatCLP(noEs.potentialMonthlySavings)} CLP adicionales cada mes para transferir a Fintual Acciones.`,
+        title: `Visión 360° (${pInfo.shortLabel}): ${noEs.percentage}% en gastos no esenciales`,
+        message: `En ${pInfo.label}, sumando tu Cuenta/Débito ****0401 y tu Tarjeta de Crédito ****4114, has consumido ${formatCLP(g.kpis.totalConsumoRealConsolidado)} CLP reales, de los cuales ${formatCLP(noEs.amount)} CLP (${noEs.percentage}%) corresponden a gastos Opcionales y Gasto Hormiga.${topRec ? ` Tu comercio más repetido en este período es "${topRec.merchant}" (${topRec.count} veces por ${formatCLP(topRec.amount)} CLP).` : ''} Si recortas a la mitad los gastos no esenciales, liberarías ${formatCLP(noEs.potentialMonthlySavings)} CLP adicionales cada mes para Fintual Acciones.`,
         potentialMonthlySavings: noEs.potentialBimonthlySavings,
         potentialAnnualSavings: noEs.potentialAnnualSavings
       }
@@ -760,23 +1000,29 @@ function getActiveAuditObject() {
 
 function renderKpiSummary() {
   const grid = document.getElementById('kpi-summary-grid');
+  const pInfo = appState.periodInfo;
 
   if (activeTab === 'DASHBOARD') {
     const gk = appState.globalDashboard.kpis;
+    const isNovOnly = pInfo.key === '2026-11';
+    const ingFootnote = isNovOnly && gk.totalIngresos === 0
+      ? `Sueldo +$899.346 abonado el 30/10 · Saldo Cta disponible: +${formatCLP(gk.balanceCuentaCorriente)}`
+      : `Abonos recibidos en Cuenta ****0401 en ${pInfo.shortLabel}`;
+
     grid.innerHTML = `
       <article class="kpi-card">
         <div class="kpi-header">
-          <span>Ingresos Totales (Cuenta ****0401)</span>
-          <span>▲ Abonos</span>
+          <span>Ingresos (${pInfo.shortLabel})</span>
+          <span>▲ Cuenta ****0401</span>
         </div>
         <div class="kpi-value mono positive">+${formatCLP(gk.totalIngresos)}</div>
-        <div class="kpi-footnote">Sueldo REM, Honorarios BH y transferencias recibidas</div>
+        <div class="kpi-footnote">${ingFootnote}</div>
       </article>
 
       <article class="kpi-card">
         <div class="kpi-header">
-          <span>Consumo Real Consolidado (Débito + TC)</span>
-          <span>▼ Sin Duplicar</span>
+          <span>Consumo Real (${pInfo.shortLabel})</span>
+          <span>▼ Débito + TC</span>
         </div>
         <div class="kpi-value mono negative">-${formatCLP(gk.totalConsumoRealConsolidado)}</div>
         <div class="kpi-footnote">Débito: ${formatCLP(gk.totalConsumoDebito)} · Crédito: ${formatCLP(gk.totalConsumoCredito)}</div>
@@ -797,35 +1043,39 @@ function renderKpiSummary() {
           <span>Lista p/ Fintual</span>
         </div>
         <div class="kpi-value mono positive">+${formatCLP(gk.liquidezLibrePostReservaTC)}</div>
-        <div class="kpi-footnote">Saldo neto (${formatCLP(gk.balanceCuentaCorriente)}) menos reserva TC (${formatCLP(gk.reservaTarjetaNoviembre)})</div>
+        <div class="kpi-footnote">Saldo Cta (${formatCLP(gk.balanceCuentaCorriente)}) menos reserva TC (${formatCLP(gk.reservaTarjetaNoviembre)})</div>
       </article>
     `;
   } else if (activeTab === 'DEBITO_CUENTA') {
     const kpis = appState.audit.DEBITO_CUENTA.kpis;
-    const netClass = kpis.saldoNetoMes >= 0 ? 'positive' : 'negative';
+    const isNovOnly = pInfo.key === '2026-11';
+    const ingFootnote = isNovOnly && kpis.totalIngresos === 0
+      ? `Sueldo REM +$899.346 abonado el 30/10 para financiar Noviembre`
+      : `Remuneración, honorarios y transferencias en ${pInfo.shortLabel}`;
+
     grid.innerHTML = `
       <article class="kpi-card">
         <div class="kpi-header">
-          <span>Balance Neto Cuenta ****0401</span>
-          <span>Cuenta Corriente</span>
+          <span>Saldo Disponible Cuenta ****0401</span>
+          <span>Acumulado Real</span>
         </div>
-        <div class="kpi-value mono ${netClass}">${kpis.saldoNetoMes >= 0 ? '+' : ''}${formatCLP(kpis.saldoNetoMes)}</div>
-        <div class="kpi-footnote">Ingresos menos compras débito, transferencias y pago TC</div>
+        <div class="kpi-value mono positive">+${formatCLP(kpis.saldoAcumuladoCuenta)}</div>
+        <div class="kpi-footnote">Flujo neto en ${pInfo.shortLabel}: ${kpis.saldoNetoMes >= 0 ? '+' : ''}${formatCLP(kpis.saldoNetoMes)}</div>
       </article>
 
       <article class="kpi-card">
         <div class="kpi-header">
-          <span>Total Ingresos / Abonos</span>
-          <span>▲ 4 Abonos</span>
+          <span>Ingresos / Abonos (${pInfo.shortLabel})</span>
+          <span>▲ Cuenta ****0401</span>
         </div>
         <div class="kpi-value mono positive">+${formatCLP(kpis.totalIngresos)}</div>
-        <div class="kpi-footnote">Remuneración / Honorarios (REM + BH) y transferencias recibidas</div>
+        <div class="kpi-footnote">${ingFootnote}</div>
       </article>
 
       <article class="kpi-card">
         <div class="kpi-header">
-          <span>Compras con Débito y Cajero</span>
-          <span>▼ ${kpis.cantidadCompras} cargos</span>
+          <span>Compras con Débito (${pInfo.shortLabel})</span>
+          <span>▼ ${kpis.cantidadComprasComercio} compras</span>
         </div>
         <div class="kpi-value mono negative">-${formatCLP(kpis.totalComprasDebito)}</div>
         <div class="kpi-footnote">Comercios, supermercados, cafetería y giros ATM</div>
@@ -833,11 +1083,11 @@ function renderKpiSummary() {
 
       <article class="kpi-card">
         <div class="kpi-header">
-          <span>Transferencias y Pago T. Crédito</span>
+          <span>Transferencias y Pago TC (${pInfo.shortLabel})</span>
           <span>⇄ TEF + Pago TC</span>
         </div>
         <div class="kpi-value mono negative">-${formatCLP(kpis.totalTransferencias)}</div>
-        <div class="kpi-footnote">Pagos de Tarjeta ****4114 y transferencias a terceros</div>
+        <div class="kpi-footnote">Transferencias a terceros y pagos de Tarjeta ****4114</div>
       </article>
     `;
   } else if (activeTab === 'CREDITO') {
@@ -846,7 +1096,6 @@ function renderKpiSummary() {
     const mb = audit.monthlyBilling;
     const toReserveNov = mb ? mb.currentCycle.totalToReserve : kpis.proyeccionFacturacion;
     const novPurchases = mb ? mb.currentCycle.purchasesThisMonth : 164146;
-    const novCount = mb ? mb.currentCycle.purchasesCount : 9;
 
     grid.innerHTML = `
       <article class="kpi-card" style="border-color: var(--amber-border); background: linear-gradient(180deg, var(--amber-soft), var(--bg-surface));">
@@ -860,11 +1109,11 @@ function renderKpiSummary() {
 
       <article class="kpi-card">
         <div class="kpi-header">
-          <span>Compras solo de Noviembre</span>
-          <span>01 Nov – Hoy</span>
+          <span>Compras en ${pInfo.shortLabel}</span>
+          <span>${kpis.cantidadCompras} cargos</span>
         </div>
-        <div class="kpi-value mono negative">${formatCLP(novPurchases)}</div>
-        <div class="kpi-footnote">${novCount} cargos realizados en el mes en curso</div>
+        <div class="kpi-value mono negative">${formatCLP(kpis.totalEgresos)}</div>
+        <div class="kpi-footnote">Gasto con Tarjeta ****4114 en el período seleccionado</div>
       </article>
 
       <article class="kpi-card">
@@ -878,11 +1127,11 @@ function renderKpiSummary() {
 
       <article class="kpi-card">
         <div class="kpi-header">
-          <span>Gasto Total Acumulado (2M)</span>
+          <span>Acumulado 2° Semestre / Año</span>
           <span>Crédito ****4114</span>
         </div>
-        <div class="kpi-value mono">${formatCLP(kpis.totalEgresos)}</div>
-        <div class="kpi-footnote">${kpis.cantidadCompras} compras totales monitoreadas</div>
+        <div class="kpi-value mono">${formatCLP(mb ? mb.totalHistoryAmount : kpis.totalEgresos)}</div>
+        <div class="kpi-footnote">${mb ? mb.totalHistoryCount : kpis.cantidadCompras} compras totales en el historial</div>
       </article>
     `;
   } else if (activeTab === 'FINTUAL') {
@@ -943,10 +1192,11 @@ function renderGlobalMonthlyComparison() {
   section.style.display = 'flex';
   const months = appState.globalDashboard.monthlyComparison;
   const maxVal = Math.max(...months.map((m) => Math.max(m.ingresos, m.consumoTotal, 1)));
+  const pInfo = appState.periodInfo;
 
   const cardsHtml = months
     .map((m) => {
-      const isSelected = activeMonthFilter === m.key;
+      const isSelected = (pInfo.scope === 'CURRENT_MONTH' || pInfo.scope === 'MONTH') && pInfo.key === m.key;
       const ingPct = Math.round((m.ingresos / maxVal) * 100);
       const debPct = Math.round((m.consumoDebito / maxVal) * 100);
       const credPct = Math.round((m.consumoCredito / maxVal) * 100);
@@ -960,7 +1210,7 @@ function renderGlobalMonthlyComparison() {
         >
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <span style="font-size:14px; font-weight:700;">${m.label}</span>
-            <span class="badge badge-demo mono">${m.txCount} movs</span>
+            <span class="badge ${isSelected ? 'badge-gmail' : 'badge-demo'} mono">${m.txCount} movs</span>
           </div>
 
           <div style="display:flex; flex-direction:column; gap:6px; font-size:12px;">
@@ -992,7 +1242,7 @@ function renderGlobalMonthlyComparison() {
           <div style="display:flex; justify-content:space-between; align-items:center; padding-top:6px; border-top:1px solid var(--border-subtle); font-size:12px;">
             <span style="color:var(--text-muted);">Gasto Hormiga del mes: <strong class="mono" style="color:var(--crimson);">${formatCLP(m.gastoHormiga)}</strong></span>
             <span style="font-size:11px; color:var(--bch-royal-hover); font-weight:600;">
-              ${isSelected ? '✓ Filtrado' : 'Filtrar →'}
+              ${isSelected ? '✓ Viendo este mes' : 'Ver mes →'}
             </span>
           </div>
         </div>
@@ -1003,14 +1253,16 @@ function renderGlobalMonthlyComparison() {
   section.innerHTML = `
     <div class="panel-header">
       <div>
-        <h2 class="panel-title">📊 Evolución Mensual Interactiva (Débito ****0401 + Crédito ****4114)</h2>
-        <p class="panel-subtitle">Toca cualquier mes para filtrar todo el Dashboard General a ese período</p>
+        <h2 class="panel-title">📊 Comparativa Mensual Interactiva (Sep · Oct · Nov 2026)</h2>
+        <p class="panel-subtitle">Por defecto estás viendo el <strong>Mes Actual (Noviembre 2026)</strong>. Toca cualquier mes o usa el selector superior para ver Por Semestre o Por Año.</p>
       </div>
-      ${
-        activeMonthFilter !== 'ALL'
-          ? `<button class="btn" onclick="setMonthFilter('ALL')">Ver Todos los Meses</button>`
-          : `<span class="badge badge-gmail mono">Actualización Diaria en Tiempo Real</span>`
-      }
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        ${
+          pInfo.scope === 'CURRENT_MONTH' || pInfo.scope === 'MONTH'
+            ? `<button class="btn" onclick="setPeriodScope('SEMESTER')">Ver Consolidado Semestral</button>`
+            : `<button class="btn btn-primary" onclick="setPeriodScope('CURRENT_MONTH')">Volver al Mes Actual (Nov)</button>`
+        }
+      </div>
     </div>
     <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(265px, 1fr)); gap:12px;">
       ${cardsHtml}
@@ -1030,10 +1282,11 @@ function renderCreditBillingSection() {
   section.style.display = 'flex';
   const mb = appState.audit.CREDITO.monthlyBilling;
   const cur = mb.currentCycle;
+  const pInfo = appState.periodInfo;
 
   const monthCardsHtml = mb.months
     .map((m) => {
-      const isSelected = activeMonthFilter === m.monthKey;
+      const isSelected = (pInfo.scope === 'CURRENT_MONTH' || pInfo.scope === 'MONTH') && pInfo.key === m.monthKey;
       const isPending = m.status === 'POR_PAGAR';
       const borderStyle = isSelected
         ? 'border: 2px solid var(--bch-royal);'
@@ -1072,7 +1325,7 @@ function renderCreditBillingSection() {
           </div>
 
           <div style="font-size:11px; color:var(--bch-royal-hover); font-weight:600; padding-top:2px;">
-            ${isSelected ? '✓ Mostrando solo compras de este mes (toca para ver todos)' : '→ Toca para filtrar compras de ' + m.label}
+            ${isSelected ? '✓ Viendo compras de ' + m.label : '→ Toca para ver compras de ' + m.label}
           </div>
         </div>
       `;
@@ -1089,9 +1342,9 @@ function renderCreditBillingSection() {
       </div>
       <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
         ${
-          activeMonthFilter !== 'ALL'
-            ? `<button class="btn" onclick="setMonthFilter('ALL')">Mostrar Todos los Meses</button>`
-            : ''
+          pInfo.scope === 'CURRENT_MONTH' || pInfo.scope === 'MONTH'
+            ? `<button class="btn" onclick="setPeriodScope('SEMESTER')">Ver Todos los Meses (Semestre)</button>`
+            : `<button class="btn btn-primary" onclick="setPeriodScope('CURRENT_MONTH')">Ver Solo Mes Actual (Nov)</button>`
         }
         <span class="badge badge-opcional mono" style="font-size:12.5px; padding:5px 10px;">
           Reservar en Noviembre: ${formatCLP(cur.totalToReserve)} CLP
@@ -1276,23 +1529,24 @@ function renderAgentAlert() {
   const audit = getActiveAuditObject();
   const alertObj = audit.agentAlert;
   const section = document.getElementById('agent-alert-section');
+  const pInfo = appState.periodInfo;
 
   section.className = `agent-alert-banner ${alertObj.severity}`;
   section.innerHTML = `
     <div class="agent-alert-top">
       <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-        <span class="agent-badge">🤖 Auditoría del Agente IA</span>
+        <span class="agent-badge">🤖 Auditoría del Agente IA · ${pInfo.shortLabel}</span>
         <h3 class="agent-alert-title">${alertObj.title}</h3>
       </div>
       <span class="mono" style="font-size:12px; color:var(--text-secondary);">
-        Ahorro potencial 50%: <strong style="color:var(--emerald);">${formatCLP(alertObj.potentialMonthlySavings)} / bimestre</strong>
+        Ahorro potencial 50%: <strong style="color:var(--emerald);">${formatCLP(alertObj.potentialMonthlySavings)} en ${pInfo.shortLabel}</strong>
       </span>
     </div>
     <p class="agent-alert-message">${alertObj.message}</p>
     <div class="savings-highlight-row">
       <span>Proyección anual transferible a Fintual Acciones reduciendo 50% gastos no esenciales: <span class="savings-chip mono">${formatCLP(alertObj.potentialAnnualSavings)} CLP/año</span></span>
       <span>·</span>
-      <span>Monitoreo diario activo en: <strong>tu-correo@gmail.com</strong></span>
+      <span>Período activo: <strong>${pInfo.label}</strong></span>
     </div>
   `;
 }
@@ -1300,14 +1554,15 @@ function renderAgentAlert() {
 function renderSemaphorePanel() {
   const audit = getActiveAuditObject();
   const sem = audit.semaphore;
+  const pInfo = appState.periodInfo;
 
   document.getElementById('semaphore-panel-title').textContent =
     activeTab === 'DASHBOARD'
-      ? 'Semáforo Financiero Consolidado (Débito + Crédito)'
-      : 'Auditoría de Necesidad (Semáforo Financiero)';
+      ? `Semáforo Financiero Consolidado · ${pInfo.shortLabel}`
+      : `Auditoría de Necesidad · ${pInfo.shortLabel}`;
 
   document.getElementById('semaphore-total-badge').textContent =
-    `Egresos Evaluados: ${formatCLP(audit.kpis.totalEgresos)}`;
+    `Egresos (${pInfo.shortLabel}): ${formatCLP(audit.kpis.totalEgresos)}`;
 
   document.getElementById('sem-bar-green').style.width = `${sem.necesario.percentage}%`;
   document.getElementById('sem-bar-amber').style.width = `${sem.opcional.percentage}%`;
@@ -1374,7 +1629,7 @@ function renderRankingPanel() {
   }
 
   if (!items || items.length === 0) {
-    container.innerHTML = `<p style="font-size:12.5px; color:var(--text-muted);">No hay datos registrados para esta vista.</p>`;
+    container.innerHTML = `<p style="font-size:12.5px; color:var(--text-muted);">No hay datos registrados para este período.</p>`;
     return;
   }
 
@@ -1408,14 +1663,11 @@ function getNecessityBadgeClass(level) {
 
 function renderTransactionsList() {
   const container = document.getElementById('transactions-list-container');
+  const pInfo = appState.periodInfo;
   let list =
     activeTab === 'DASHBOARD'
       ? [...appState.transactions]
       : appState.transactions.filter((t) => t.instrument === activeTab);
-
-  if (activeMonthFilter !== 'ALL') {
-    list = list.filter((t) => getTxMonthKey(t) === activeMonthFilter);
-  }
 
   if (activeNecessityFilter !== 'ALL') {
     list = list.filter((t) => t.necessity_level === activeNecessityFilter);
@@ -1428,17 +1680,17 @@ function renderTransactionsList() {
     });
   }
 
-  const monthSuffix = activeMonthFilter !== 'ALL' ? ` · Filtro Mes: ${activeMonthFilter}` : '';
+  const periodSuffix = ` · ${pInfo.label}`;
   document.getElementById('movements-shown-count').textContent = `${list.length} movimientos`;
   document.getElementById('movements-list-title').textContent =
     activeTab === 'DASHBOARD'
-      ? `Flujo Unificado en Tiempo Real (Débito ****0401 + Crédito ****4114)${monthSuffix}`
+      ? `Flujo Unificado (Débito ****0401 + Crédito ****4114)${periodSuffix}`
       : activeTab === 'CREDITO'
-        ? `Movimientos Reales · Tarjeta de Crédito ****4114${monthSuffix}`
-        : `Movimientos Reales · Cuenta Corriente / Débito ****0401${monthSuffix}`;
+        ? `Movimientos · Tarjeta de Crédito ****4114${periodSuffix}`
+        : `Movimientos · Cuenta Corriente / Débito ****0401${periodSuffix}`;
 
   if (list.length === 0) {
-    container.innerHTML = `<div style="padding:20px; text-align:center; color:var(--text-secondary); font-size:13px;">No se encontraron movimientos con el filtro actual.</div>`;
+    container.innerHTML = `<div style="padding:20px; text-align:center; color:var(--text-secondary); font-size:13px;">No se encontraron movimientos en <strong>${pInfo.label}</strong> con el filtro actual.</div>`;
     return;
   }
 
