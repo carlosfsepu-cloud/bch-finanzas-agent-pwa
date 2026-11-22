@@ -1,7 +1,7 @@
 {
-  "name": "BCH Finanzas IA & Fintual Hub",
-  "short_name": "BCH Finanzas",
-  "description": "Agente Financiero Banco de Chile en Tiempo Real vía Gmail + Fintual Acciones Hub",
+  "name": "Mi Presupuesto & Control de Gastos IA",
+  "short_name": "Mis Gastos IA",
+  "description": "Panel Personal de Control de Presupuesto, Gastos Mensuales y Portafolio",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

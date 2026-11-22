@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="PWA y Agente de Finanzas Personales IA en tiempo real para Banco de Chile vía Gmail con Dashboard 360° e Integración Multi-Agente para Fintual Acciones." />
+  <meta name="robots" content="noindex, nofollow, noarchive" />
+  <meta name="description" content="Panel Personal de Control de Presupuesto, Gastos Mensuales y Portafolio con Agente IA." />
   <meta name="theme-color" content="#0A1861" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -12,23 +13,23 @@
   <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png" />
   <link rel="apple-touch-icon" href="./icon-192.png" />
   <link rel="stylesheet" href="./styles.css" />
-  <title>Banco de Chile &amp; Fintual Acciones · Agente Financiero IA en Tiempo Real</title>
+  <title>Mi Presupuesto &amp; Control de Gastos IA · Panel Personal</title>
 </head>
 <body>
   <!-- ================= HEADER / TOPBAR ================= -->
   <header class="topbar">
     <div class="topbar-inner">
       <div class="brand-group">
-        <div class="brand-mark">BCH</div>
+        <div class="brand-mark">IA</div>
         <div class="brand-title">
-          <h1>Agente Financiero Banco de Chile &amp; Fintual Hub</h1>
+          <h1>Mi Presupuesto &amp; Control de Gastos IA</h1>
           <div class="brand-subtitle">
             <span class="live-dot"></span>
-            <span id="gmail-account-status">Gmail Protegido (Token 24/7)</span>
+            <span id="gmail-account-status">Sincronización Personal (24/7)</span>
             <span>·</span>
             <span id="realtime-status-badge" class="mono">Escucha diaria activa (24/7)</span>
             <span>·</span>
-            <span id="real-email-counter" class="mono">126 movs</span>
+            <span id="real-email-counter" class="mono">46 movs</span>
           </div>
         </div>
       </div>
@@ -281,7 +282,7 @@
     </div>
   </div>
 
-  <!-- ================= MODAL 2: SIMULAR CORREO ENTRANTE BANCO DE CHILE ================= -->
+  <!-- ================= MODAL 2: SIMULAR CORREO ENTRANTE PERSONAL ================= -->
   <div id="modal-simulate" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-sim-title">
     <div class="modal-box">
       <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -368,11 +369,11 @@
     </div>
   </div>
 
-  <!-- ================= MODAL 4: CONECTAR MOTOR GMAIL 24/7 BLINDADO & PIN ================= -->
+  <!-- ================= MODAL 4: CONECTAR MOTOR GMAIL 24/7 & CÓDIGO LOCAL ================= -->
   <div id="modal-cloud-config" class="modal-backdrop" role="dialog" aria-modal="true">
     <div class="modal-box">
       <div style="display:flex; justify-content:space-between; align-items:center;">
-        <h3 style="font-size:15px; font-weight:700;">🔒 Seguridad: Conector Gmail 24/7 &amp; PIN de Bloqueo</h3>
+        <h3 style="font-size:15px; font-weight:700;">☁️ Configuración: Conector Gmail 24/7</h3>
         <button class="btn" onclick="closeCloudConfigModal()">✕</button>
       </div>
 
@@ -381,61 +382,67 @@
         <input
           id="cloud-worker-url"
           type="url"
+          autocomplete="off"
           class="form-control mono"
           placeholder="https://script.google.com/macros/s/.../exec"
         />
       </div>
 
       <div class="form-group">
-        <label for="cloud-worker-token">2. Clave Secreta del Conector (<code>API_SECRET_TOKEN</code> en Code.gs)</label>
+        <label for="cloud-worker-token">2. Código del Conector (<code>API_SECRET_TOKEN</code> en Code.gs)</label>
         <input
           id="cloud-worker-token"
-          type="password"
+          type="text"
+          autocomplete="off"
           class="form-control mono"
-          placeholder="BCH-2026-CLAVE-SECRETA"
+          placeholder="MI-CODIGO-2026"
         />
       </div>
 
       <div class="form-group">
-        <label for="app-lock-pin">3. PIN de Bloqueo al abrir la App en tu Android (Opcional, 4-6 dígitos)</label>
+        <label for="app-lock-pin">3. Código Numérico Local en tu Android (Opcional, 4 dígitos)</label>
         <input
           id="app-lock-pin"
-          type="password"
+          type="text"
+          inputmode="numeric"
+          autocomplete="off"
           class="form-control mono"
-          placeholder="Dejar vacío para sin PIN, o escribe ej. 4821"
+          placeholder="Dejar vacío o escribe ej. 4821"
         />
       </div>
 
       <div style="background:var(--bg-elevated); padding:10px 12px; border-radius:8px; border:1px solid var(--border-subtle); font-size:11.5px; color:var(--text-secondary); line-height:1.5;">
-        <strong>Blindaje Activo (Zero-PII &amp; Token Auth):</strong><br/>
-        • La app jamás pide claves del Banco de Chile ni permite mover dinero.<br/>
-        • El conector <code>Code.gs</code> exige tu <code>API_SECRET_TOKEN</code> y rechaza accesos no autorizados.<br/>
-        • Ningún nombre personal, RUT ni correo queda expuesto en GitHub.
+        <strong>Modo Privado (Zero-PII):</strong><br/>
+        • Esta aplicación es una calculadora personal de presupuesto de solo lectura.<br/>
+        • El conector <code>Code.gs</code> valida tu código y rechaza accesos externos.<br/>
+        • Ningún dato personal queda expuesto en el código fuente.
       </div>
 
       <div style="display:flex; justify-content:flex-end; gap:8px;">
         <button class="btn" onclick="closeCloudConfigModal()">Cerrar</button>
-        <button class="btn btn-primary" onclick="saveCloudWorkerUrl()">Guardar Seguridad y Sincronizar</button>
+        <button class="btn btn-primary" onclick="saveCloudWorkerUrl()">Guardar y Sincronizar</button>
       </div>
     </div>
   </div>
 
-  <!-- ================= PANTALLA DE BLOQUEO POR PIN EN ANDROID ================= -->
+  <!-- ================= PANTALLA DE CÓDIGO NUMÉRICO LOCAL ================= -->
   <div id="modal-pin-lock" class="modal-backdrop" role="dialog" aria-modal="true" style="background: rgba(11, 15, 23, 0.96); z-index: 200;">
     <div class="modal-box" style="max-width:360px; text-align:center;">
       <div class="brand-mark" style="margin:0 auto; width:48px; height:48px; font-size:16px;">🔒</div>
-      <h3 style="font-size:16px; font-weight:700;">BCH Finanzas IA · App Protegida</h3>
-      <p style="font-size:12.5px; color:var(--text-secondary);">Ingresa tu PIN de seguridad para desbloquear tu panel financiero:</p>
+      <h3 style="font-size:16px; font-weight:700;">Panel Personal · Código Local</h3>
+      <p style="font-size:12.5px; color:var(--text-secondary);">Ingresa tu código numérico de 4 dígitos:</p>
       <input
         id="unlock-pin-input"
-        type="password"
+        type="text"
+        inputmode="numeric"
+        autocomplete="off"
         class="form-control mono"
         style="text-align:center; font-size:18px; letter-spacing:0.25em;"
-        placeholder="••••"
+        placeholder="0000"
         onkeydown="if(event.key==='Enter') verifyAppPin()"
       />
-      <p id="unlock-pin-error" style="font-size:12px; color:var(--crimson); display:none;">PIN incorrecto. Intenta nuevamente.</p>
-      <button class="btn btn-primary" style="justify-content:center; width:100%;" onclick="verifyAppPin()">Desbloquear Aplicación</button>
+      <p id="unlock-pin-error" style="font-size:12px; color:var(--crimson); display:none;">Código incorrecto. Intenta nuevamente.</p>
+      <button class="btn btn-primary" style="justify-content:center; width:100%;" onclick="verifyAppPin()">Abrir Panel</button>
     </div>
   </div>
 
@@ -443,7 +450,7 @@
   <div id="modal-android-install" class="modal-backdrop" role="dialog" aria-modal="true">
     <div class="modal-box">
       <div style="display:flex; justify-content:space-between; align-items:center;">
-        <h3 style="font-size:15px; font-weight:700;">📲 Cómo instalar BCH Finanzas IA en tu Android</h3>
+        <h3 style="font-size:15px; font-weight:700;">📲 Cómo instalar Mis Gastos IA en tu Android</h3>
         <button class="btn" onclick="closeAndroidInstallModal()">✕</button>
       </div>
 
@@ -451,7 +458,7 @@
         <p>1. Abre el enlace de tu aplicación en <strong>Google Chrome</strong> desde tu teléfono Android.</p>
         <p>2. Toca el menú de <strong>tres puntos (⋮)</strong> arriba a la derecha en Chrome.</p>
         <p>3. Selecciona <strong>"Instalar aplicación"</strong> (o <em>"Agregar a la pantalla principal"</em>).</p>
-        <p>4. ¡Listo! Verás el ícono azul <strong>BCH Finanzas</strong> en tu teléfono y se abrirá a pantalla completa como aplicación nativa.</p>
+        <p>4. ¡Listo! Verás el ícono <strong>Mis Gastos IA</strong> en tu teléfono y se abrirá a pantalla completa como aplicación nativa.</p>
       </div>
 
       <div style="display:flex; justify-content:flex-end;">

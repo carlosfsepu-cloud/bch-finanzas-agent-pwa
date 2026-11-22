@@ -68,10 +68,10 @@ const BASE_REAL_ROWS = [
   [248,"1a1a371710571819","03/11/2026 19:04",3420,0,0,"GENESIS","Minimarket y Almacén","Gasto Hormiga"],
   [247,"1a1a11f24b6016f8","03/11/2026 08:15",4990,0,0,"SERVICIOS Y COMER","Alimentación / Cafetería","Gasto Hormiga"],
   [246,"1a19d36117cb09de","02/11/2026 14:02",2290,0,0,"SERVICIOS Y COMER","Alimentación / Cafetería","Gasto Hormiga"],
-  [245,"1a19c0c20d28e8e6","02/11/2026 08:36",40000,0,0,"Transferencia a Tercero (Banco Falabella) · \"tarjeta\"","Transferencias","Opcional / Prescindible"],
+  [245,"1a19c0c20d28e8e6","02/11/2026 08:36",40000,0,0,"Transferencia a Tercero (Cta. Externa 1) · \"tarjeta\"","Transferencias","Opcional / Prescindible"],
   [244,"1a1985b2073f97c4","01/11/2026 15:24",1500,0,0,"MINIMARKET AGUSTI","Minimarket y Almacén","Gasto Hormiga"],
   [243,"1a19738698b0e86e","01/11/2026 10:06",5150,0,0,"MERPAGO*DUBLE","Minimarket y Almacén","Gasto Hormiga"],
-  [242,"1a193524f3cedc28","31/10/2026 15:56",12000,0,0,"Transferencia a Tercero (Banco Estado)","Transferencias","Opcional / Prescindible"],
+  [242,"1a193524f3cedc28","31/10/2026 15:56",12000,0,0,"Transferencia a Tercero (Cta. Externa 2)","Transferencias","Opcional / Prescindible"],
   [241,"1a192c90d6639ae0","31/10/2026 13:26",1800,0,0,"Almacen y bazar e","Minimarket y Almacén","Gasto Hormiga"],
   [240,"1a18e98d35e39c88","30/10/2026 17:55",899346,1,0,"Abono Remuneración Mensual (REM 202610)","Ingresos / Abonos","Ingreso"],
   [239,"1a18e708c7ea3170","30/10/2026 17:11",17780,0,0,"LBB COSTANERA SPA","Restaurantes y Fast Food","Opcional / Prescindible"],
@@ -144,13 +144,13 @@ const BASE_REAL_ROWS = [
   [172,"1a0ebc06e09de3c9","29/09/2026 03:00",22800,0,1,"SMART FIT GIMNASIOS","Salud y Gimnasio","Opcional / Prescindible"],
   [171,"1a0ea322928acb2c","28/09/2026 19:45",2530,0,0,"620-SAN BERNARDO","Minimarket y Almacén","Gasto Hormiga"],
   [170,"1a0da054281c8e4a","25/09/2026 16:22",611,0,0,"GOOGLE *Bumble Da","Suscripciones y Apps","Gasto Hormiga"],
-  [169,"1a0d5b7f5a06209a","24/09/2026 20:19",12000,0,0,"Transferencia a Tercero (Banco Estado)","Transferencias","Opcional / Prescindible"],
+  [169,"1a0d5b7f5a06209a","24/09/2026 20:19",12000,0,0,"Transferencia a Tercero (Cta. Externa 2)","Transferencias","Opcional / Prescindible"],
   [168,"1a0d41ea13a6041e","24/09/2026 12:52",69787,0,0,"Pago Tarjeta de Crédito Nacional ****4114","Pago Tarjeta de Crédito","Necesario"],
   [167,"1a0cde6568f6467a","23/09/2026 07:53",10000,0,0,"Giro en Cajero Automático","Cajero Automático","Opcional / Prescindible"],
   [166,"1a0cc33d0719cfa0","22/09/2026 23:58",120000,1,0,"Transferencia Recibida en Cuenta","Ingresos / Abonos","Ingreso"],
   [165,"1a0ca5cb16c36c7f","22/09/2026 15:24",3093,0,0,"PAYU *UBER TRIP","Transporte y Metro","Gasto Hormiga"],
   [164,"1a0c26018fd064a8","21/09/2026 02:10",34900,0,1,"SMART FIT GIMNASIOS","Salud y Gimnasio","Opcional / Prescindible"],
-  [163,"1a0c0ab680a102b9","20/09/2026 18:14",4000,0,0,"Transferencia a Tercero (Banco Falabella) · \"mote\"","Transferencias","Gasto Hormiga"]
+  [163,"1a0c0ab680a102b9","20/09/2026 18:14",4000,0,0,"Transferencia a Tercero (Cta. Externa 1) · \"mote\"","Transferencias","Gasto Hormiga"]
 ];
 
 function getDefaultJustification(mer, cat, nec) {
@@ -236,7 +236,7 @@ let localFintualSignals = (() => {
   } catch {}
   return [
     { agent_id: 'fintual-invest-agent-v1', action_type: 'DCA', ticker: 'VOO', suggested_amount_clp: 120000, suggested_amount_usd: 123.71, confidence_pct: 92, reasoning: 'Acumulación periódica en S&P 500 aprovechando liquidez libre en Cuenta Corriente ****0401 post-reserva de Tarjeta de Crédito.', source_liquidity_note: 'Excedente neto disponible tras apartar $201.353 CLP para pagar TC ****4114.' },
-    { agent_id: 'fintual-invest-agent-v1', action_type: 'BUY', ticker: 'QQQ', suggested_amount_clp: 74790, suggested_amount_usd: 77.10, confidence_pct: 88, reasoning: 'Redirección equivalente al 100% de tu gasto hormiga bimestral en SERVICIOS Y COMER (24 compras = $74.790 CLP) hacia Nasdaq-100.', source_liquidity_note: 'Reasignación de ahorro por control de gasto hormiga detectado por el Agente Banco de Chile.' }
+    { agent_id: 'fintual-invest-agent-v1', action_type: 'BUY', ticker: 'QQQ', suggested_amount_clp: 74790, suggested_amount_usd: 77.10, confidence_pct: 88, reasoning: 'Redirección equivalente al 100% de tu gasto hormiga bimestral en SERVICIOS Y COMER (24 compras = $74.790 CLP) hacia Nasdaq-100.', source_liquidity_note: 'Reasignación de ahorro por control de gasto hormiga detectado por el Agente Mi Cuenta.' }
   ];
 })();
 
@@ -777,7 +777,7 @@ async function fetchState() {
         }
         if (added > 0) {
           saveLocalState();
-          showToast('☁️ Nuevos Correos Banco de Chile (24/7)', `Se incorporaron ${added} movimiento(s) verificados con tu Token.`);
+          showToast('☁️ Nuevos Correos Mi Cuenta (24/7)', `Se incorporaron ${added} movimiento(s) verificados con tu Token.`);
         }
       }
     } catch (e) {
@@ -839,7 +839,7 @@ function initSSE() {
         const payload = JSON.parse(ev.data);
         const tx = payload.transaction;
         showToast(
-          '⚡ Nueva Transacción Banco de Chile en Tiempo Real',
+          '⚡ Nueva Transacción Mi Cuenta en Tiempo Real',
           `${tx.merchant} · ${formatCLP(tx.amount)} (${tx.necessity_level})`
         );
         fetchState();
@@ -1455,7 +1455,7 @@ function renderFintualHub() {
     <article class="panel-card">
       <div class="panel-header">
         <div>
-          <h2 class="panel-title">🌉 Puente de Liquidez en Tiempo Real: Banco de Chile → Fintual Acciones</h2>
+          <h2 class="panel-title">🌉 Puente de Liquidez en Tiempo Real: Mi Cuenta → Fintual Acciones</h2>
           <p class="panel-subtitle">${f.contractStatus}</p>
         </div>
         <div style="display:flex; gap:8px; flex-wrap:wrap;">
@@ -1504,7 +1504,7 @@ function renderFintualHub() {
         <div class="panel-header">
           <div>
             <h2 class="panel-title">🤖 Bandeja de Órdenes y Señales del Agente de Inversiones</h2>
-            <p class="panel-subtitle">Alimentada vía <code>POST /api/fintual/agent-signal</code> usando tu liquidez real del Banco de Chile</p>
+            <p class="panel-subtitle">Alimentada vía <code>POST /api/fintual/agent-signal</code> usando tu liquidez real del Mi Cuenta</p>
           </div>
           <span class="badge badge-gmail mono">${f.signals.length} señales</span>
         </div>
@@ -1751,7 +1751,7 @@ async function triggerGmailSync() {
   btn.disabled = true;
   try {
     await fetchState();
-    showToast('Sincronización Completada', 'Tus movimientos de Banco de Chile y Fintual están al día.');
+    showToast('Sincronización Completada', 'Tus movimientos de Mi Cuenta y Fintual están al día.');
   } catch (err) {
     showToast('Aviso', err.message);
   } finally {
@@ -1966,7 +1966,7 @@ async function simulateInvestmentAgentSignal() {
       suggested_amount_usd: 103.09,
       confidence_pct: 95,
       reasoning: 'Inversión indexada mensual S&P 500 financiada con liquidez disponible tras apartar los $201.353 CLP del pago de Tarjeta de Crédito Noviembre.',
-      source_liquidity_note: 'Puente automático Banco de Chile → Fintual Acciones.'
+      source_liquidity_note: 'Puente automático Mi Cuenta → Fintual Acciones.'
     }
   ];
   const pick = sampleSignals[Math.floor(Math.random() * sampleSignals.length)];
@@ -1992,7 +1992,7 @@ async function triggerAndroidInstall() {
     deferredInstallPrompt.prompt();
     const { outcome } = await deferredInstallPrompt.userChoice;
     if (outcome === 'accepted') {
-      showToast('📲 Instalación Iniciada', 'BCH Finanzas IA se está agregando a la pantalla de tu Android.');
+      showToast('📲 Instalación Iniciada', 'Mis Gastos IA IA se está agregando a la pantalla de tu Android.');
     }
     deferredInstallPrompt = null;
     return;
